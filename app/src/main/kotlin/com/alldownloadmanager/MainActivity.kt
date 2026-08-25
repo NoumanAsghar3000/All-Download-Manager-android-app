@@ -31,7 +31,7 @@ class DownloadsViewModel : ViewModel() {
     private lateinit var repo: DownloadRepository
     fun init(context: android.content.Context) { if (!::repo.isInitialized) repo = DownloadRepository(context) }
     fun items() = repo.observe()
-    fun add(url: String, scope: kotlinx.coroutines.CoroutineScope) = scope.launch { val item = repo.add(url); WorkManager.getInstance().enqueueUniqueWork(item.id, androidx.work.ExistingWorkPolicy.KEEP, DownloadWorker.request(item.id)) }
+    fun add(url: String, context: android.content.Context, scope: kotlinx.coroutines.CoroutineScope) = scope.launch { val item = repo.add(url); WorkManager.getInstance(context).enqueueUniqueWork(item.id, androidx.work.ExistingWorkPolicy.KEEP, DownloadWorker.request(item.id)) }
     fun pause(item: DownloadEntity, context: android.content.Context) = viewModelScope.launch { WorkManager.getInstance(context).cancelUniqueWork(item.id); repo.update(item.copy(status = DownloadStatus.PAUSED)) }
 }
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,10 +44,10 @@ class DownloadsViewModel : ViewModel() {
             Column(Modifier.padding(padding).padding(horizontal = 16.dp).fillMaxSize()) {
                 if (tab == 0 || tab == 1) {
                     Spacer(Modifier.height(16.dp)); Text(if (tab == 0) "Ready when you are" else "Downloads", style = MaterialTheme.typography.headlineSmall)
-                    Spacer(Modifier.height(12.dp)); OutlinedTextField(url, { url = it }, Modifier.fillMaxWidth(), label = { Text("Paste a file URL") }, singleLine = true, trailingIcon = { IconButton(onClick = { if (url.isNotBlank()) vm.add(url, scope) }) { Icon(Icons.Default.ArrowDownward, "Download") } })
+                    Spacer(Modifier.height(12.dp)); OutlinedTextField(url, { url = it }, Modifier.fillMaxWidth(), label = { Text("Paste a file URL") }, singleLine = true, trailingIcon = { IconButton(onClick = { if (url.isNotBlank()) vm.add(url, context, scope) }) { Icon(Icons.Default.ArrowDownward, "Download") } })
                     Spacer(Modifier.height(20.dp)); if (items.isEmpty()) Text("No downloads yet. Paste an HTTP or HTTPS file URL to begin.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) { items(items, key = { it.id }) { DownloadRow(it, context, vm) } }
-                } else if (tab == 2) BrowserScreen(url) { url = it; if (it.startsWith("http")) vm.add(it, scope) } else FilesScreen()
+                } else if (tab == 2) BrowserScreen(url) { url = it; if (it.startsWith("http")) vm.add(it, context, scope) } else FilesScreen()
             }
         }
     }
