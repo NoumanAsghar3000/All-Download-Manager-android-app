@@ -1,0 +1,3 @@
+package com.alldownloadmanager.download
+import android.content.BroadcastReceiver; import android.content.Context; import android.content.Intent; import androidx.work.WorkManager; import kotlinx.coroutines.*
+class BootReceiver : BroadcastReceiver() { override fun onReceive(context: Context, intent: Intent) { if (intent.action == Intent.ACTION_BOOT_COMPLETED) CoroutineScope(Dispatchers.IO).launch { AppDatabase.get(context).downloads().resumable().forEach { WorkManager.getInstance(context).enqueue(DownloadWorker.request(it.id)) } } } }
